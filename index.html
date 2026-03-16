@@ -1,0 +1,814 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoWay</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    @font-face { font-family: 'GameFont'; src: local('Segoe UI'), local('Arial'); }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+    canvas { display: block; }
+    .screen {
+      position: absolute; inset: 0;
+      display: none;
+      z-index: 100;
+    }
+    .screen.active { display: flex; }
+    #mainMenu {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0a1628 0%, #1a2744 40%, #0d1f3c 100%);
+    }
+    #mainMenu::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 30%, rgba(66,133,244,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .menu-title {
+      font-size: 72px;
+      font-weight: 900;
+      letter-spacing: 12px;
+      color: #fff;
+      text-shadow: 0 0 40px rgba(66,133,244,0.5), 0 4px 20px rgba(0,0,0,0.5);
+      margin-bottom: 8px;
+      position: relative;
+    }
+    .menu-subtitle {
+      font-size: 14px;
+      letter-spacing: 6px;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      margin-bottom: 60px;
+    }
+    .menu-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #fff;
+      padding: 16px 64px;
+      margin: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: all 0.25s;
+      min-width: 280px;
+      text-align: center;
+      position: relative;
+    }
+    .menu-btn:hover {
+      background: rgba(66,133,244,0.2);
+      border-color: rgba(66,133,244,0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(66,133,244,0.2);
+    }
+    .menu-btn:active { transform: translateY(0); }
+    .menu-version {
+      position: absolute;
+      bottom: 20px;
+      right: 24px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: 1px;
+    }
+    #mapSelect {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0a1628 0%, #1a2744 40%, #0d1f3c 100%);
+    }
+    .panel {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 32px;
+      width: 520px;
+      max-height: 70vh;
+      position: relative;
+    }
+    .panel-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+    .map-list {
+      list-style: none;
+      max-height: 260px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+    .map-list::-webkit-scrollbar { width: 6px; }
+    .map-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 3px; }
+    .map-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+    .map-item {
+      padding: 12px 16px;
+      margin: 4px 0;
+      border-radius: 6px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid transparent;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .map-item:hover { background: rgba(66,133,244,0.12); border-color: rgba(66,133,244,0.3); }
+    .map-item.selected { background: rgba(66,133,244,0.2); border-color: #4285F4; }
+    .map-item-name { font-weight: 600; font-size: 14px; }
+    .map-item-info { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .panel-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .panel-actions .menu-btn { flex: 1; min-width: auto; padding: 12px 16px; font-size: 13px; }
+    .btn-primary { background: rgba(66,133,244,0.25) !important; border-color: rgba(66,133,244,0.5) !important; }
+    .btn-back { background: rgba(255,255,255,0.04) !important; }
+    .btn-danger { background: rgba(220,50,50,0.2) !important; border-color: rgba(220,50,50,0.4) !important; }
+    .btn-danger:hover { background: rgba(220,50,50,0.35) !important; border-color: rgba(220,50,50,0.6) !important; box-shadow: 0 8px 24px rgba(220,50,50,0.2) !important; }
+    .empty-msg {
+      text-align: center;
+      color: rgba(255,255,255,0.3);
+      padding: 32px;
+      font-size: 14px;
+    }
+    #worldSelect {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0a1628 0%, #1a2744 40%, #0d1f3c 100%);
+    }
+    #loadingScreen {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0a0e1a;
+    }
+    .loading-bar-container {
+      width: 400px;
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      margin-top: 32px;
+      overflow: hidden;
+    }
+    .loading-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4285F4, #66b2ff);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+    .loading-text {
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 16px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .loading-title {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 8px;
+      color: #fff;
+      text-shadow: 0 0 30px rgba(66,133,244,0.4);
+    }
+    #hud {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 50;
+      display: none;
+    }
+    #hud.active { display: block; }
+    .crosshair {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 20px; height: 20px;
+    }
+    .crosshair::before, .crosshair::after {
+      content: '';
+      position: absolute;
+      background: rgba(255,255,255,0.7);
+    }
+    .crosshair::before { top: 50%; left: 0; right: 0; height: 2px; transform: translateY(-50%); }
+    .crosshair::after { left: 50%; top: 0; bottom: 0; width: 2px; transform: translateX(-50%); }
+    /* ── Survival Bars ── */
+    #survival-bars {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .survival-bar {
+      width: 200px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .survival-bar-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      width: 52px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .survival-bar-track {
+      flex: 1;
+      height: 10px;
+      background: rgba(0,0,0,0.5);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .survival-bar-fill {
+      height: 100%;
+    }
+    .survival-bar-fill.health { background: #cc3333; }
+    .survival-bar-fill.thirst { background: #2288dd; }
+    .survival-bar-fill.hunger { background: #cc8833; }
+    /* ── Interaction Prompt ── */
+    #interact-prompt {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.8);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+      letter-spacing: 1px;
+      display: none;
+      pointer-events: none;
+    }
+    #interact-prompt.active { display: block; }
+    /* ── Hotbar ── */
+    #hotbar {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 2px;
+    }
+    .hotbar-slot {
+      width: 48px;
+      height: 48px;
+      background: rgba(0,0,0,0.5);
+      border: 2px solid rgba(255,255,255,0.15);
+      position: relative;
+    }
+    .hotbar-slot.selected {
+      border-color: #fff;
+      background: rgba(255,255,255,0.12);
+    }
+    .hotbar-slot-num {
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.4);
+      font-family: monospace;
+      pointer-events: none;
+    }
+    .hotbar-slot.selected .hotbar-slot-num {
+      color: rgba(255,255,255,0.8);
+    }
+    .hotbar-slot-item {
+      position: absolute;
+      bottom: 2px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 7px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.6);
+      pointer-events: none;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    /* ── Inventory Overlay ── */
+    #inventoryOverlay {
+      position: absolute;
+      inset: 0;
+      z-index: 70;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+    }
+    #inventoryOverlay.active { display: flex; }
+    .inventory-panel {
+      background: rgba(20,20,30,0.95);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 24px;
+      width: 460px;
+    }
+    .inventory-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 2px;
+    }
+    .inv-slot {
+      aspect-ratio: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    .inv-slot-label {
+      position: absolute;
+      bottom: 1px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 7px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.55);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .inv-slot-count {
+      position: absolute;
+      top: 1px;
+      right: 2px;
+      font-size: 8px;
+      font-weight: 700;
+      color: #fff;
+      font-family: monospace;
+      pointer-events: none;
+    }
+    .hotbar-slot-count {
+      position: absolute;
+      top: 14px;
+      right: 2px;
+      font-size: 9px;
+      font-weight: 700;
+      color: #fff;
+      font-family: monospace;
+      pointer-events: none;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+    .wood-preview-tooltip {
+      position: fixed;
+      width: 100px;
+      height: 100px;
+      z-index: 200;
+      pointer-events: none;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(10,10,20,0.9);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .wood-preview-tooltip canvas {
+      display: block;
+      width: 100px;
+      height: 100px;
+    }
+    /* ── Pickup Notifications ── */
+    #pickup-notifications {
+      position: absolute;
+      bottom: 70px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      pointer-events: none;
+      z-index: 60;
+    }
+    .pickup-notif {
+      background: rgba(0,0,0,0.65);
+      color: #7dff7d;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: monospace;
+      padding: 4px 12px;
+      border-left: 3px solid #7dff7d;
+      opacity: 1;
+      transition: opacity 0.4s;
+    }
+    .pickup-notif.fade { opacity: 0; }
+    /* ── Inventory Drag ── */
+    .inv-slot.drag-over {
+      border-color: rgba(100,180,255,0.7);
+      background: rgba(100,180,255,0.12);
+    }
+    .inv-slot.dragging {
+      opacity: 0.4;
+    }
+    .inv-slot.inv-selected {
+      border-color: #ffcc00;
+      background: rgba(255,204,0,0.12);
+    }
+    .inv-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin: 10px 0 4px;
+    }
+    .inv-section-label:first-child { margin-top: 0; }
+    /* ── Inventory Tabs ── */
+    .inv-tab-bar {
+      display: flex;
+      gap: 0;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .inv-tab {
+      flex: 1;
+      padding: 8px 0;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: rgba(255,255,255,0.4);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      font-family: inherit;
+    }
+    .inv-tab:hover {
+      color: rgba(255,255,255,0.7);
+    }
+    .inv-tab.active {
+      color: rgba(255,255,255,0.9);
+      border-bottom-color: #4285F4;
+    }
+    .crafting-empty {
+      text-align: center;
+      padding: 40px 0;
+      color: rgba(255,255,255,0.25);
+      font-size: 13px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    /* ── Item Detail Panel ── */
+    .item-detail-panel {
+      display: none;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(30,30,45,0.9);
+      padding: 12px;
+      margin-bottom: 14px;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .item-detail-panel.active { display: flex; }
+    .item-detail-preview {
+      width: 80px;
+      height: 80px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.4);
+      flex-shrink: 0;
+      overflow: hidden;
+      cursor: grab;
+    }
+    .item-detail-preview:active { cursor: grabbing; }
+    .item-detail-preview canvas { display: block; width: 80px; height: 80px; }
+    .item-detail-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .item-detail-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .item-detail-desc {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    .item-detail-drop {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .item-detail-drop input {
+      width: 55px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 4px 6px;
+      font-size: 12px;
+      font-family: monospace;
+      outline: none;
+    }
+    .item-detail-drop input:focus {
+      border-color: rgba(100,180,255,0.5);
+    }
+    .item-detail-drop button {
+      background: rgba(255,80,80,0.2);
+      border: 1px solid rgba(255,80,80,0.4);
+      color: #ff6666;
+      padding: 4px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .item-detail-drop button:hover {
+      background: rgba(255,80,80,0.35);
+    }
+    .inventory-hint {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 1px;
+    }
+    #hud-fps {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: monospace;
+      color: rgba(255,255,255,0.9);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    #hud-daytime {
+      position: absolute;
+      top: 28px;
+      right: 16px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: monospace;
+      color: rgba(255,255,255,0.7);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    #hud-position {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: monospace;
+      color: rgba(255,255,255,0.9);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    #compass {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 400px;
+      height: 28px;
+      overflow: hidden;
+    }
+    #compass-strip {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      white-space: nowrap;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    #compass .compass-tick {
+      display: inline-block;
+      text-align: center;
+      color: rgba(255,255,255,0.75);
+      font-weight: 600;
+      line-height: 32px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    #compass .compass-tick.cardinal {
+      color: #ff4444;
+      font-weight: 800;
+      font-size: 15px;
+      text-shadow: 0 0 6px rgba(255,68,68,0.4), 0 1px 3px rgba(0,0,0,0.6);
+    }
+    #compass .compass-tick.intercardinal {
+      color: rgba(255,255,255,0.95);
+      font-weight: 700;
+      font-size: 13px;
+    }
+    #compass-pings {
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+      pointer-events: none;
+    }
+    .compass-ping-marker {
+      position: absolute;
+      top: 1px;
+      width: 8px;
+      height: 8px;
+      transform: translateX(-50%) rotate(45deg);
+      border: 1.5px solid rgba(255,255,255,0.8);
+    }
+    .compass-ping-dist {
+      position: absolute;
+      top: 12px;
+      transform: translateX(-50%);
+      font-size: 8px;
+      font-family: monospace;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    #compass-center {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 100%;
+      background: rgba(255,255,255,0.6);
+    }
+    #compass-center::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-bottom: 6px solid rgba(255,255,255,0.6);
+    }
+    #pauseMenu {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+    }
+    .world-name-input {
+      width: 100%;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .world-name-input:focus { border-color: #4285F4; }
+    .world-name-input::placeholder { color: rgba(255,255,255,0.25); }
+    #mapOverlay {
+      position: absolute;
+      inset: 0;
+      z-index: 60;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.55);
+    }
+    #mapOverlay.active { display: flex; }
+    #mapCanvas {
+      border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      box-shadow: 0 0 40px rgba(0,0,0,0.6);
+    }
+    #mapGridLabel {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div id="mainMenu" class="screen active">
+    <div class="menu-title">GOWAY</div>
+    <div class="menu-subtitle">Open World Adventure</div>
+    <button class="menu-btn" onclick="showScreen('mapSelect')">Start Game</button>
+    <button class="menu-btn" onclick="showScreen('worldSelect')">Load World</button>
+    <div class="menu-version">v0.1.0</div>
+  </div>
+  <div id="mapSelect" class="screen">
+    <div class="panel">
+      <div class="panel-title">Select a Map</div>
+      <ul class="map-list" id="mapList"></ul>
+      <input type="text" class="world-name-input" id="worldNameInput" placeholder="World name..." maxlength="32">
+      <div class="panel-actions">
+        <button class="menu-btn btn-back" onclick="showScreen('mainMenu')">Back</button>
+        <button class="menu-btn btn-primary" id="btnNewWorld" onclick="createNewWorld()">New World</button>
+      </div>
+    </div>
+  </div>
+  <div id="worldSelect" class="screen">
+    <div class="panel">
+      <div class="panel-title">Load World</div>
+      <ul class="map-list" id="worldList"></ul>
+      <div class="panel-actions">
+        <button class="menu-btn btn-back" onclick="showScreen('mainMenu')">Back</button>
+        <button class="menu-btn btn-danger" id="btnDeleteWorld" onclick="deleteSelectedWorld()">Delete</button>
+        <button class="menu-btn btn-primary" id="btnLoadWorld" onclick="loadSelectedWorld()">Load</button>
+      </div>
+    </div>
+  </div>
+  <div id="loadingScreen" class="screen">
+    <div class="loading-title">GOWAY</div>
+    <div class="loading-bar-container">
+      <div class="loading-bar" id="loadingBar"></div>
+    </div>
+    <div class="loading-text" id="loadingText">Preparing world...</div>
+  </div>
+  <div id="pauseMenu" class="screen">
+    <div class="panel" style="text-align:center;">
+      <div class="panel-title">Paused</div>
+      <button class="menu-btn" onclick="resumeGame()" style="margin-bottom:8px;">Continue</button>
+      <button class="menu-btn" onclick="saveGame()" style="margin-bottom:8px;">Save Game</button>
+      <button class="menu-btn" onclick="saveAndQuit()">Save &amp; Quit</button>
+    </div>
+  </div>
+  <div id="hud">
+    <div class="crosshair"></div>
+    <div id="hud-fps">-- FPS</div>
+    <div id="hud-daytime">Day 1 06:00</div>
+    <div id="hud-position">0, 0, 0</div>
+    <div id="compass">
+      <div id="compass-strip"></div>
+      <div id="compass-pings"></div>
+      <div id="compass-center"></div>
+    </div>
+    <div id="survival-bars">
+      <div class="survival-bar">
+        <div class="survival-bar-label">Health</div>
+        <div class="survival-bar-track"><div class="survival-bar-fill health" id="bar-health" style="width:100%"></div></div>
+      </div>
+      <div class="survival-bar">
+        <div class="survival-bar-label">Thirst</div>
+        <div class="survival-bar-track"><div class="survival-bar-fill thirst" id="bar-thirst" style="width:100%"></div></div>
+      </div>
+      <div class="survival-bar">
+        <div class="survival-bar-label">Hunger</div>
+        <div class="survival-bar-track"><div class="survival-bar-fill hunger" id="bar-hunger" style="width:100%"></div></div>
+      </div>
+    </div>
+    <div id="interact-prompt">[E] Drink Water</div>
+    <div id="hotbar"></div>
+    <div id="pickup-notifications"></div>
+  </div>
+  <div id="inventoryOverlay">
+    <div class="inventory-panel">
+      <div class="inventory-title">Inventory</div>
+      <div class="item-detail-panel" id="itemDetailPanel">
+        <div class="item-detail-preview" id="itemDetailPreview"></div>
+        <div class="item-detail-info">
+          <div class="item-detail-name" id="itemDetailName"></div>
+          <div class="item-detail-desc" id="itemDetailDesc"></div>
+          <div class="item-detail-drop">
+            <input type="number" id="itemDropCount" min="1" value="1">
+            <button id="btnDropItem" onclick="dropSelectedItem()">Drop</button>
+          </div>
+        </div>
+      </div>
+      <div id="inventoryHotbarSection"></div>
+      <div id="inventoryInvSection"></div>
+      <div id="inventoryCraftingSection" style="display:none;"></div>
+      <div class="inventory-hint">E close &bull; Right-click transfer &bull; Click inspect &bull; Drag icon to split &bull; Drag off to drop</div>
+    </div>
+  </div>
+  <div id="mapOverlay">
+    <canvas id="mapCanvas"></canvas>
+    <div id="mapGridLabel">Hold G to view map &#8226; Click to ping &#8226; Right-click to clear</div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/mapLoader.js"></script>
+  <script src="js/fpsController.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/mapOverlay.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
