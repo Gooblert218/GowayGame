@@ -1,0 +1,50 @@
+{
+  "format": "goway-model-export",
+  "version": 1,
+  "exportedAt": "2026-03-15T20:24:12.588Z",
+  "objects": [
+    {
+      "type": "cube",
+      "subType": "custom",
+      "name": "Cube 2",
+      "x": 0,
+      "y": 0,
+      "height": 4.5,
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 9,
+        "z": 1
+      },
+      "color": "#7e764e",
+      "radius": 7.794,
+      "walkable": false
+    },
+    {
+      "type": "cube",
+      "subType": "custom",
+      "name": "Cube 4",
+      "x": 0,
+      "y": 0,
+      "height": 8.922,
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 2,
+        "y": 6.226,
+        "z": 2
+      },
+      "color": "#545454",
+      "radius": 5.392,
+      "walkable": false
+    }
+  ],
+  "animations": []
+}

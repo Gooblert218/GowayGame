@@ -1,0 +1,29 @@
+{
+  "format": "goway-model-export",
+  "version": 1,
+  "exportedAt": "2026-03-15T20:41:41.376Z",
+  "objects": [
+    {
+      "type": "cube",
+      "subType": "custom",
+      "name": "Cube 2",
+      "x": 0,
+      "y": 0,
+      "height": 4.5,
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 50
+      },
+      "scale": {
+        "x": 1,
+        "y": 9,
+        "z": 1
+      },
+      "color": "#7e764e",
+      "radius": 7.794,
+      "walkable": false
+    }
+  ],
+  "animations": []
+}

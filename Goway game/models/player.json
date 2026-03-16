@@ -1,0 +1,29 @@
+{
+  "format": "goway-model-export",
+  "version": 1,
+  "exportedAt": "2026-03-15T19:13:52.218Z",
+  "objects": [
+    {
+      "type": "capsule",
+      "subType": "custom",
+      "name": "Capsule 3",
+      "x": 0,
+      "y": 0,
+      "height": 0.75,
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "color": "#89b4fa",
+      "radius": 0.75,
+      "walkable": false
+    }
+  ],
+  "animations": []
+}
